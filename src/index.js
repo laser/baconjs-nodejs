@@ -1,8 +1,7 @@
 var Bacon   = require('baconjs').Bacon;
 var express = require('express');
-var _       = require('underscore');
 
-var f     = require('./functional');
+var __    = require('./functional');
 var db    = require('./database');
 
 var connections, response,                               // streams
@@ -23,13 +22,13 @@ function streaminate(app, path) {
 }
 
 // return 'No match found' if null, val otherwise
-fromRecordToResp = f.iif(f.thk('No match found'), f.id, f.neq(null));
+fromRecordToResp = __.iif(__.cnst('No match found'), __.id, __.neq(null));
 
 // given an http conn, returns its title param
-fromReqToQuery = _.compose(f.prop('title'), f.prop('params'), f.send('req'));
+fromReqToQuery = __.compose(__.prop('title'), __.prop('params'), __.send('req'));
 
 // given a book title, queries database
-fromQueryToRecord = _.partial(Bacon.fromNodeCallback, db.getBookByTitle)
+fromQueryToRecord = __.partial(Bacon.fromNodeCallback, db.getBookByTitle)
 
 // a stream of inbound HTTP connections
 connections = streaminate(app, '/books/:title');

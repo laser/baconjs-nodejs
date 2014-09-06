@@ -1,4 +1,4 @@
-client = require('mongodb').MongoClient
+var client = require('mongodb').MongoClient
 
 module.exports = {
   getBookByTitle: function(title, callback) {
