@@ -24,6 +24,10 @@
   },
   "homepage": "https://github.com/laser/baconjs-nodejs",
   "dependencies": {
-    "baconjs": "^0.7.22"
+    "baconjs": "^0.7.22",
+    "express": "^4.8.8",
+    "fn.js": "^0.8.1",
+    "mongodb": "^1.4.10",
+    "underscore": "^1.7.0"
   }
 }
