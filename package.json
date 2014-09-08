@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./src/index.js",
-    "seed": "./scripts/seed_database.js"
+    "start-bookstore": "node ./bookstore/src/index.js",
+    "seed-bookstore": "./bookstore/scripts/seed_database.js"
   },
   "repository": {
     "type": "git",

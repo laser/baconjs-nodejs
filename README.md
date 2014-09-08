@@ -1,15 +1,16 @@
 baconjs-nodejs
 ==============
 
-Bacon.js w/Express (Node.js) and MongoDB
+Bacon.js on the Server
 
 WAT
 ---
 
-A simple web application that returns book information
-given a title. Uses MongoDB, Express, and Bacon.js. Simply
-issue HTTP requests to /books/:title and, assuming we find
-a match, get back some JSON.
+Demonstrating usage of Bacon.js on the server. Examples
+include:
+
+1. A simple book-searching app
+1. A Socket.IO-powered chat server
 
 WHY
 ---
@@ -21,8 +22,17 @@ doing it wrong, but, whatever.
 SETUP
 -----
 
+### All Demos
+
 1. install mongo and run it
 1. npm install
-1. npm run-script seed
-1. npm start
+
+### Bookstore
+
+1. npm run-script seed-bookstore
+1. npm start-bookstore
 1. curl http://localhost:3001/books/The%20Hobbit
+
+### Chat
+
+1. TBD
