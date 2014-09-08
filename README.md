@@ -10,7 +10,7 @@ Demonstrating usage of Bacon.js on the server. Examples
 include:
 
 1. A simple book-searching app
-1. A Socket.IO-powered chat server
+1. A WebSocket-powered chat server
 
 WHY
 ---
@@ -30,9 +30,9 @@ SETUP
 ### Bookstore
 
 1. npm run-script seed-bookstore
-1. npm start-bookstore
+1. npm run-script start-bookstore
 1. curl http://localhost:3001/books/The%20Hobbit
 
 ### Chat
 
-1. TBD
+1. npm run-script start-chat

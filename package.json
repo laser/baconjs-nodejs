@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start-bookstore": "node ./bookstore/src/index.js",
-    "seed-bookstore": "./bookstore/scripts/seed_database.js"
+    "seed-bookstore": "./bookstore/scripts/seed_database.js",
+    "start-chat": "node ./chat/src/server.js"
   },
   "repository": {
     "type": "git",
@@ -30,6 +31,7 @@
     "express": "^4.8.8",
     "fn.js": "^0.8.1",
     "mongodb": "^1.4.10",
-    "underscore": "^1.7.0"
+    "underscore": "^1.7.0",
+    "ws": "^0.4.32"
   }
 }
