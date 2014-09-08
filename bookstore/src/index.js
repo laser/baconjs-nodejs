@@ -41,8 +41,7 @@ responses = connections
   .map(fromRecordToResp)
 
 // zip both streams together and respond
-Bacon.zipAsArray(connections, responses).onValue(function(a) {
-  var conn = a[0], body = a[1];
+Bacon.zipAsArray(connections, responses).onValues(function(conn, body) {
   conn.res().send(body);
 });
 
