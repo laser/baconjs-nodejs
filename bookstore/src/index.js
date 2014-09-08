@@ -27,9 +27,6 @@ fromRecordToResp = __.iif(__.cnst('No match found'), __.id, __.neq(null));
 // given an http conn, returns its title param
 fromReqToQuery = __.compose(__.prop('title'), __.prop('params'), __.send('req'));
 
-// given a book title, queries database
-fromQueryToRecord = __.partial(Bacon.fromNodeCallback, db.getBookByTitle)
-
 // a stream of inbound HTTP connections
 connections = streaminate(app, '/books/:title');
 
@@ -37,7 +34,7 @@ connections = streaminate(app, '/books/:title');
 // mongo database
 responses = connections
   .map(fromReqToQuery)
-  .flatMap(fromQueryToRecord)
+  .flatMap(Bacon.fromNodeCallback, db.getBookByTitle)
   .map(fromRecordToResp)
 
 // zip both streams together and respond
