@@ -1,17 +1,16 @@
-var path  = require('path')
-var app   = require('express')()
-var http  = require('http').Server(app)
-var io    = require('socket.io')(http)
-var Bacon = require('baconjs').Bacon
-var _     = require('underscore')
+var path    = require('path')
+var express = require('express')
+var app     = express()
+var http    = require('http').Server(app)
+var io      = require('socket.io')(http)
+var Bacon   = require('baconjs').Bacon
+var _       = require('underscore')
 
 app.get('/', function(req, res) {
-  res.sendFile(path.join(__dirname, 'frame.html'));
+  res.sendFile(path.join(__dirname, 'static', 'frame.html'));
 });
 
-app.get('/index.html', function(req, res) {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+app.use(express.static(__dirname + '/static'));
 
 http.listen(3003, function() {
   console.log('listening on *:3003');

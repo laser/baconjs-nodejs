@@ -1,6 +1,6 @@
 var server = require('./server')
-var Bacon =  require('baconjs').Bacon
-var _     = require('underscore')
+var Bacon  = require('baconjs').Bacon
+var _      = require('underscore')
 
 var advertisements = new Bacon.Bus()
 
@@ -15,7 +15,6 @@ var notifications = server
       return socket.id != connection.id;
     });
     return ['' + connection.id + ' just connected.', otherUsers];
-    //return ["#{connection.id} connected", otherUsers]
   });
 
 var greetings = server
