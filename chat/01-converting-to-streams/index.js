@@ -6,12 +6,6 @@ var http    = require('http').Server(app);
 var io      = require('socket.io')(http);
 var Bacon   = require('baconjs').Bacon;
 
-app.get('/', function(req, res){
-  res.sendFile(path.join(__dirname, 'static', 'index.html'));
-});
-
-app.use(express.static(__dirname + '/static'));
-
 var connections = Bacon.fromBinder(function(sink) {
   io.on('connection', sink)
 });
@@ -24,30 +18,31 @@ var disconnects = connections.flatMap(function(socket) {
   });
 });
 
-var connectDisconnects = connections
-  .map(function(socket) { return ['connection', socket]; })
-  .merge(disconnects.map(function(socket) { return ['disconnect', socket]; }));
-
-var active = connectDisconnects.scan([], function(acc, packed) {
-  var event = packed[0], socket = packed[1];
-  return event == 'connection'
-    ? acc.concat(socket)
-    : _.filter(acc, function(s) { return s.id != socket.id });
-});
-
 var messages = connections.flatMap(function(socket) {
-  return Bacon.fromEventTarget(socket, 'message');
-});
-
-active
-  .sampledBy(messages, function(sockets, message) {
-    return [sockets, message];
-  })
-  .onValues(function(sockets, message) {
-    _.each(sockets, function(s) {
-      s.send(message);
+  return Bacon.fromBinder(function(sink) {
+    socket.on('message', function(message) {
+      sink([socket, message]);
     });
   });
+});
+
+connections.onValue(function(socket) {
+  socket.broadcast.emit('message', 'User ' + socket.id + ' has connected.');
+});
+
+messages.onValues(function(socket, message) {
+  io.emit('message', '' + socket.id + ': ' + message);
+});
+
+disconnects.onValue(function(socket) {
+  io.emit('User ' + socket.id + ' has disconnected.');
+});
+
+app.get('/', function(req, res){
+  res.sendFile(path.join(__dirname, 'static', 'index.html'));
+});
+
+app.use(express.static(__dirname + '/static'));
 
 http.listen(3000, function(){
   console.log('listening on *:3000');

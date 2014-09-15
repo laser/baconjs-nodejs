@@ -19,7 +19,7 @@ io.on('connection', function(socket) {
   });
 
   socket.on('disconnect', function() {
-    io.sockets.emit('User ' + socket.id + ' has disconnected.');
+    io.emit('message', 'User ' + socket.id + ' has disconnected.');
   });
 });
 
