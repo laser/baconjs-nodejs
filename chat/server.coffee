@@ -3,7 +3,7 @@ app   = require('express')()
 http  = require('http').Server(app)
 io    = require('socket.io')(http)
 Bacon = require('baconjs').Bacon
-_     = require('underscore')
+_     = require('lodash')
 
 app.get '/', (req, res) ->
   res.sendFile(path.join(__dirname, 'frame.html'))
@@ -11,43 +11,47 @@ app.get '/', (req, res) ->
 app.get '/index.html', (req, res) ->
   res.sendFile(path.join(__dirname, 'index.html'))
 
-http.listen 3003, -> console.log('listening on *:3000')
+http.listen 3003, -> console.log('listening on *:3003')
 
-connectDisconnects = new Bacon.Bus()
+class Client
+  constructor: (@id, @incoming, @outgoing) ->
+
+connections    = new Bacon.Bus()
+disconnections = new Bacon.Bus()
+messages       = new Bacon.Bus()
+broadcastMsgs  = new Bacon.Bus()
 
 io.on 'connection', (socket) ->
-  connectDisconnects.push(['connect', socket])
-  socket.on 'disconnect', -> connectDisconnects.push(['disconnect', socket])
+  incoming = Bacon.fromEventTarget socket, 'message'
+  outgoing = new Bacon.Bus()
+  outgoing.onValue (message) -> socket.send(message)
 
-sockets = connectDisconnects.scan([], (sockets, [event, socket]) ->
-  if event == 'connect'
-    sockets.concat(socket)
+  unplug1 = messages.plug(incoming)
+  unplug2 = outgoing.plug(broadcastMsgs)
+  client = new Client(socket.id, incoming, outgoing)
+
+  connections.push(client)
+  socket.on 'disconnect', ->
+    disconnections.push(client)
+    unplug1()
+    unplug2()
+
+clients = connections.merge(disconnections).scan [], (clients, client) ->
+  index = _.findIndex clients, (c) -> c.id == client.id
+
+  if index == -1
+    clients.concat(client)
   else
-    _.filter sockets, (s) -> s.id != socket.id
-)
-
-connections = connectDisconnects.filter ([event, _]) -> event == 'connect'
-  .map ([_, connection]) -> connection
-
-disconnections = connectDisconnects.filter ([event, _]) -> event == 'disconnect'
-  .map ([_, connection]) -> connection
-
-messages = connections.flatMap (connection) ->
-  Bacon.fromEventTarget connection, 'message'
+    clients.splice(index, 1)
+    clients
 
 broadcast = (stream) ->
-  sockets
-    .sampledBy stream, (sockets, message) ->
-      [ message, recipients ] = message if _.isArray(message)
-      [ recipients || sockets, message ]
-    .onValues (sockets, message) ->
-      for socket in sockets
-        socket.emit 'message', message
+  broadcastMsgs.plug(stream)
 
 module.exports = {
-  connections: connections,
+  connections: connections
   disconnection: disconnections
-  messages: messages,
-  broadcast: broadcast,
-  sockets: sockets
+  clients: clients
+  messages: messages
+  broadcast: broadcast
 }

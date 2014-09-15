@@ -23,7 +23,7 @@
         });
 
         $('form').submit(function(e){
-          socket.emit('message', $('#m').val());
+          socket.send($('#m').val());
 
           $('#m').val('');
           e.preventDefault();
