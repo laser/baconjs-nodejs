@@ -11,7 +11,7 @@ app.get '/', (req, res) ->
 app.get '/index.html', (req, res) ->
   res.sendFile(path.join(__dirname, 'index.html'))
 
-http.listen 3003, -> console.log('listening on *:3000')
+http.listen 3003, -> console.log('listening on *:3003')
 
 connectDisconnects = new Bacon.Bus()
 
