@@ -1,5 +1,6 @@
 var _       = require('underscore'),
     express = require('express'),
+    request = require('request'),
     fs      = require('fs'),
     app     = express(),
     http    = require('http').Server(app),
@@ -11,26 +12,40 @@ app.get('/', function(req, res) {
 
 app.use(express.static('./static'));
 
-fs.readFile('./hello.txt', 'utf8', function(err, greeting) {
-  if (err) throw err;
+var randomWord = "";
 
-  io.on('connection', function(socket) {
+setInterval(function() {
+  request('http://randomword.setgetgo.com/get.php', function(err, response) {
+    if (err) throw err;
+    randomWord = response.body;
+  });;
+}, 2000);
 
-    socket.broadcast.emit('message', 'CONN: ' + socket.id);
+function main() {
+  if (randomWord == "") {
+    setTimeout(main, 100);
+  }
+  else {
+    io.on('connection', function(socket) {
 
-    socket.send(greeting);
+      socket.broadcast.emit('message', 'CONN: ' + socket.id);
 
-    socket.on('message', function(msg) {
-      var path = './logs/' + socket.id + '.log';
+      socket.send('New user, your word is: ' + randomWord);
 
-      fs.appendFile(path, msg + '\n', function(err) {
-        if (err) throw err;
+      socket.on('message', function(msg) {
+        var path = './logs/' + socket.id + '.log';
+
+        fs.appendFile(path, msg + '\n', function(err) {
+          if (err) throw err;
+        });
+
+        io.emit('message', socket.id + ': ' + msg);
       });
-
-      io.emit('message', socket.id + ': ' + msg);
     });
-  });
-});
+  }
+}
+
+main();
 
 http.listen(3000, function() {
   console.log('listening on *:3000');
