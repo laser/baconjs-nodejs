@@ -11,16 +11,8 @@ app.get('/', function(req, res) {
 
 app.use(express.static('./static'));
 
-function log(level, message) {
-  var logger = level == 'debug' ? 'log' : 'error';
-  console[logger](message);
-}
-
 fs.readFile('./hello.txt', 'utf8', function(err, greeting) {
-  if (err) {
-    log('error', err);
-    throw err
-  }
+  if (err) throw err;
 
   io.on('connection', function(socket) {
 
@@ -32,17 +24,10 @@ fs.readFile('./hello.txt', 'utf8', function(err, greeting) {
       var path = './logs/' + socket.id + '.log';
 
       fs.appendFile(path, msg + '\n', function(err) {
-        if (err) {
-          log('error', err);
-          throw err
-        }
+        if (err) throw err;
       });
 
       io.emit('message', socket.id + ': ' + msg);
-    });
-
-    socket.on('disconnect', function() {
-      io.emit('message', 'DISC: ' + socket.id);
     });
   });
 });
