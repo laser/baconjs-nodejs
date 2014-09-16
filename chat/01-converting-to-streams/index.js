@@ -1,49 +1,58 @@
-var _       = require('underscore')
-var path    = require('path')
-var express = require('express')
-var app     = express();
-var http    = require('http').Server(app);
-var io      = require('socket.io')(http);
-var Bacon   = require('baconjs').Bacon;
+var express = require('express'),
+    fs      = require('fs'),
+    app     = express(),
+    http    = require('http').Server(app),
+    io      = require('socket.io')(http),
+    Bacon   = require('baconjs').Bacon;
 
-var connections = Bacon.fromBinder(function(sink) {
+app.get('/', function(req, res) {
+  res.sendFile('./static/index.html');
+});
+
+app.use(express.static('./static'));
+
+var greeting = Bacon
+  .fromNodeCallback(fs.readFile, './hello.asdtxt', 'utf8')
+  .toProperty()
+
+var sockets = Bacon.fromBinder(function(sink) {
   io.on('connection', sink)
 });
 
-var disconnects = connections.flatMap(function(socket) {
+var greetings = greeting.sampledBy(sockets, function(grt, skt) {
+  return [grt, skt];
+})
+
+var messages = sockets.flatMap(function(skt) {
   return Bacon.fromBinder(function(sink) {
-    socket.on('disconnect', function() {
-      sink(socket);
+    skt.on('message', function(msg) {
+      sink([skt, msg]);
     });
   });
 });
 
-var messages = connections.flatMap(function(socket) {
-  return Bacon.fromBinder(function(sink) {
-    socket.on('message', function(message) {
-      sink([socket, message]);
-    });
-  });
+var appends = messages.flatMap(function(packed) {
+  var skt = packed[0], msg = packed[1];
+  var path = './logs/' + skt.id + '.log';
+  return Bacon.fromNodeCallback(fs.appendFile, path, msg + '\n');
 });
 
-connections.onValue(function(socket) {
-  socket.broadcast.emit('message', 'User ' + socket.id + ' has connected.');
+sockets.onValue(function(skt) {
+  skt.broadcast.emit('message', 'CONN: ' + skt.id);
 });
 
-messages.onValues(function(socket, message) {
-  io.emit('message', '' + socket.id + ': ' + message);
+greetings.onValues(function(grt, skt) {
+  skt.send(grt);
 });
 
-disconnects.onValue(function(socket) {
-  io.emit('User ' + socket.id + ' has disconnected.');
+messages.onValues(function(skt, msg) {
+  io.emit('message', '' + skt.id + ': ' + msg);
 });
 
-app.get('/', function(req, res){
-  res.sendFile(path.join(__dirname, 'static', 'index.html'));
+appends.onValue(function() {
+  // no op; simply starts the "pull"
 });
 
-app.use(express.static(__dirname + '/static'));
-
-http.listen(3000, function(){
+http.listen(3000, function() {
   console.log('listening on *:3000');
 });
