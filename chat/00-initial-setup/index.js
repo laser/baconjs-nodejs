@@ -55,8 +55,7 @@ getWeather(function(err, weather) {
     socket.on('message', function(msg) {
       io.emit('message', socket.id + ': ' + msg);
 
-      if (20 === ++messageCount) {
-        messageCount = 0;
+      if (++messageCount % 20 === 0) {
         io.emit('message', 'Did you know...?');
       }
 
