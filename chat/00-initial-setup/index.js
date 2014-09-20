@@ -32,6 +32,8 @@ function getWeather(callback) {
 }
 
 getWeather(function(err, weather) {
+  var messageCount = 0;
+
   if (err) throw err
 
   function poll() {
@@ -53,6 +55,11 @@ getWeather(function(err, weather) {
 
     socket.on('message', function(msg) {
       io.emit('message', socket.id + ': ' + msg);
+
+      if (20 === ++messageCount) {
+        messageCount = 0;
+        io.emit('message', 'Did you know...?');
+      }
 
       if (msg.indexOf("cloudy") !== -1) {
         log(socket.id, msg, function(err) {
