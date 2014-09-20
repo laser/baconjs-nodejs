@@ -9,8 +9,19 @@ app.get('/', function(req, res) {
   res.sendFile('./static/index.html');
 });
 
-app.post('/log', function(req, res) {
-  res.send({});
+app.post('/api/log', function(req, res) {
+  res.send(true);
+});
+
+app.get('/api/weather', function(req, res) {
+  res.send({
+    "main": {
+      "temp": (Math.round(Math.random() * 1000) / 10)
+    },
+    "weather": [{
+      "main": "Cloudy"
+    }]
+  });
 });
 
 app.use(express.static('./static'));
@@ -19,8 +30,8 @@ var seattleWeather = null;
 
 setInterval(function() {
   request
-    .newClient('http://api.openweathermap.org/data/2.5/')
-    .get('weather?q=Seattle,wa&units=imperial', function(err, response, body) {
+    .newClient('http://localhost:3000/api/')
+    .get('weather', function(err, response, body) {
       if (err) throw err;
       seattleWeather = body.weather[0].main + ', ' + body.main.temp + 'F';
     });
@@ -29,7 +40,7 @@ setInterval(function() {
 function log(id, msg) {
   function log_(retries) {
     request
-      .newClient('http://localhost:3000/')
+      .newClient('http://localhost:3000/api/')
       .post('log', { id: id, msg: msg }, function(err, response) {
         if (err) {
           if (retries > 0) {
