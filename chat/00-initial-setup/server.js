@@ -8,7 +8,8 @@ app.get('/', function(req, res) {
 });
 
 app.post('/api/log', function(req, res) {
-  res.send(true);
+  var x = ((Math.random() * 10) > 5) ? "NOT\nJSON" : true;
+  res.send(x);
 });
 
 app.get('/api/weather', function(req, res) {
