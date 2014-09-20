@@ -1,32 +1,11 @@
-var express = require('express'),
-    request = require('request-json'),
-    app     = express(),
-    http    = require('http').Server(app),
-    io      = require('socket.io')(http),
-    Bacon   = require('baconjs').Bacon;
-
-app.get('/', function(req, res) {
-  res.sendFile('./static/index.html');
-});
-
-// TODO: DELETE THIS
-app.post('/log', function(req, res) {
-  res.send({});
-});
-
-app.use(express.static('./static'));
-
-http.listen(3000, function() {
-  console.log('listening on *:3000');
-});
+var request = require('request-json'),
+    io      = require('./server'),
+    Bacon   = require('baconjs').Bacon,
+    client  = request.newClient('http://localhost:3000/api/');
 
 function weatherUpdate() {
   return Bacon
-    .fromNodeCallback(
-        request
-          .newClient('http://api.openweathermap.org/data/2.5/'),
-        'get',
-        'weather?q=Seattle,wa&units=imperial')
+    .fromNodeCallback(client, 'get', 'weather')
     .map('.body')
     .map(JSON.parse)
     .map(function(body) {
@@ -34,66 +13,69 @@ function weatherUpdate() {
     });
 };
 
-function logAttempt(packed) {
-  var socket = packed[0], msg = packed[1], id = socket.id,
-      client = request.newClient('http://localhost:3000/');
-
-  return Bacon.fromNodeCallback(client, 'post', 'log', {
-    id: id, msg: msg
-  });
-}
-
 var connections = Bacon.fromBinder(function(sink) {
   io.on('connection', sink)
 });
 
 var currentWeather = Bacon
-  .mergeAll(
-    weatherUpdate(),
-    Bacon
-      .interval(2000)
-      .flatMap(weatherUpdate)
-  )
+  .mergeAll(weatherUpdate(), Bacon.interval(2000).flatMap(weatherUpdate))
   .toProperty()
 
 var greetings = currentWeather
-  .sampledBy(connections, function(greeting, socket) {
-    var tmp = 'Welcome! Current weather is: ' + greeting;
-    return [tmp, socket];
+  .sampledBy(connections, function(weather, socket) {
+    var s = 'Welcome! Current weather is: ' + weather;
+    return { txt: s, recip: socket }
   });
 
 var messages = connections.flatMap(function(socket) {
   return Bacon.fromBinder(function(sink) {
-    socket.on('message', function(msg) {
-      sink([socket, msg]);
+    socket.on('message', function(txt) {
+      sink({ author: socket, txt: txt });
     });
   });
 });
 
-var logAttempts = messages.flatMap(function(packed) {
-  return Bacon.retry({
-    retries: 10,
-    delay: function() { return 100; },
-    source: function() { return logAttempt(packed); }
-  });
+var entries = messages
+  .filter(function(message) {
+    return message.txt.indexOf('cloudy') > -1;
+  })
+  .flatMap(function(message) {
+    return Bacon.retry({
+      retries: 10,
+      delay: function() { return 100; },
+      source: function() {
+        return Bacon.fromNodeCallback(client, 'post', 'log', {
+          id: message.author.id, txt: message.txt
+        });
+      }
+    });
 });
+
+var facts = messages
+  .scan(0, function(acc) { return acc + 1; })
+  .filter(function(acc) { return acc % 5 === 0 })
+  .map("Did you know...?");
 
 connections.onValue(function(socket) {
   socket.broadcast.emit('message', 'CONN: ' + socket.id);
 });
 
-greetings.onValues(function(greeting, socket) {
-  socket.send(greeting);
+greetings.onValue(function(message) {
+  message.recip.send(message.txt);
 });
 
-messages.onValues(function(socket, msg) {
-  io.emit('message', '' + socket.id + ': ' + msg);
+messages.onValue(function(message) {
+  io.emit('message', '' + message.author.id + ': ' + message.txt);
 });
 
-logAttempts.onValue(function() {
-  console.log('log success');
+facts.onValue(function(fact) {
+  io.emit('message', fact);
+});
+
+entries.onValue(function() {
+  // deliberate no-op
 });
 
 Bacon
-  .mergeAll(connections, greetings, messages, logAttempts)
+  .mergeAll(connections, greetings, messages, entries)
   .onError(function(err) { throw err; });
