@@ -1,5 +1,4 @@
-var _       = require('underscore'),
-    request = require('request-json'),
+var request = require('request-json'),
     io      = require('./server');
 
 function log(id, msg, callback) {
