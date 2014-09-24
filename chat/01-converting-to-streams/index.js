@@ -51,7 +51,7 @@ var entries = messages
     });
 });
 
-var facts = messages
+var funFact = messages
   .scan(0, function(acc) { return acc + 1; })
   .filter(function(acc) { return acc % 5 === 0 })
   .map("Did you know...?");
@@ -68,7 +68,7 @@ messages.onValue(function(message) {
   io.emit('message', '' + message.author.id + ': ' + message.txt);
 });
 
-facts.onValue(function(fact) {
+funFact.onValue(function(fact) {
   io.emit('message', fact);
 });
 
